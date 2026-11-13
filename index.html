@@ -39,9 +39,11 @@
   .heard { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(14px, env(safe-area-inset-bottom));
            background: rgba(31,42,36,.85); color: var(--paper); padding: 8px 16px; border-radius: 999px; font-size: 15px;
            max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-  .heard.tap { pointer-events: auto; cursor: pointer; background: rgba(31,42,36,.92); box-shadow: 0 0 0 2px rgba(251,246,233,.7); }
-  .heard.tap:hover { background: var(--bamboo); }
-  .heard .mic { margin-left: 10px; font-weight: 600; color: #ffd98a; }
+  /* nút bật mic: nhạt, nhỏ — chỉ rõ lên khi rê chuột */
+  .heard.tap { pointer-events: auto; cursor: pointer; background: rgba(31,42,36,.4); font-size: 13px; padding: 5px 12px; opacity: .75; transition: opacity .2s, background .2s; }
+  .heard.tap:hover, .heard.tap:focus-visible { opacity: 1; background: rgba(31,42,36,.7); }
+  .heard.tap .dot { display: none; }
+  .heard .mic { margin-left: 8px; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(251,246,233,.5); }
   .heard .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #888; margin-right: 8px; vertical-align: middle; }
   .heard.on .dot { background: #e5484d; animation: pulse 1s infinite; }
   @keyframes pulse { 50% { opacity: .3; } }
@@ -697,7 +699,7 @@ function start(voice) {
 // Chế độ phím: dòng dưới đáy thành nút bật mic ngay giữa ván
 function showKeysHint() {
   if (SR) {
-    heardText.innerHTML = `Chế độ phím ↑ ↓<span class="mic">🎤 Bấm để nói</span>`;
+    heardText.innerHTML = `Chế độ phím ↑ ↓ ·<span class="mic">bật mic</span>`;
     heardEl.classList.add("tap"); heardEl.setAttribute("role", "button"); heardEl.tabIndex = 0;
   } else heardText.textContent = "Chế độ phím: ↑ / ↓ hoặc chạm nửa trên/dưới";
 }
