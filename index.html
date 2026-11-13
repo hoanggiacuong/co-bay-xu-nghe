@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cò Bay Xứ Nghệ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&display=swap">
+<style>
+  /* Layout: canvas full màn hình, HUD nổi trên, overlay giữa màn khi bắt đầu / thua */
+  :root {
+    --ink: #1f2a24;
+    --paper: #fbf6e9;
+    --bamboo: #5f8f3a;
+    --lam: #2f6f8f;      /* sông Lam */
+    --dusk: #f2a65a;
+    --bad: #c8463d;
+    --good: #3c8d4f;
+    --display: "Baloo 2", "Be Vietnam Pro", system-ui, sans-serif;
+    --body: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; background: #9fd3e0; overflow: hidden; }
+  body { font-family: var(--body); color: var(--ink); user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .hud { position: fixed; inset: 0 0 auto; display: flex; justify-content: space-between; align-items: flex-start;
+         padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+         pointer-events: none; gap: 12px; }
+  .chip { background: rgba(251,246,233,.92); border-radius: 14px; padding: 6px 14px; font-family: var(--display);
+          font-weight: 800; font-size: 20px; box-shadow: 0 2px 0 rgba(0,0,0,.15); font-variant-numeric: tabular-nums; }
+  .prompt { text-align: center; flex: 1; }
+  .prompt .q { display: inline-block; background: var(--ink); color: var(--paper); border-radius: 16px; padding: 8px 20px;
+               font-family: var(--display); font-size: clamp(20px, 4vw, 30px); font-weight: 800; }
+  .prompt .q small { font-family: var(--body); font-weight: 400; font-size: .55em; opacity: .75; display: block; line-height: 1.1; }
+
+  .heard { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(14px, env(safe-area-inset-bottom));
+           background: rgba(31,42,36,.85); color: var(--paper); padding: 8px 16px; border-radius: 999px; font-size: 15px;
+           max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+  .heard .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #888; margin-right: 8px; vertical-align: middle; }
+  .heard.on .dot { background: #e5484d; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  /* Giải thích đáp án: nhỏ, nền mờ, chỉ chấm màu báo đúng/sai — để mắt vẫn ở chữ đề bài */
+  .toast { position: fixed; left: 50%; top: 104px; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px;
+           font-weight: 400; font-size: 13px; color: var(--ink); background: rgba(251,246,233,.6);
+           pointer-events: none; transition: opacity .3s; opacity: 0;
+           max-width: calc(100% - 32px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .toast.good::before { background: var(--good); } .toast.bad::before { background: var(--bad); }
+
+  .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(31,42,36,.45);
+             padding: 16px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); overflow-y: auto; }
+  .card { background: var(--paper); border-radius: 22px; padding: 24px; width: min(520px, 100%); box-shadow: 0 10px 0 rgba(0,0,0,.18); }
+  .card h1 { font-family: var(--display); font-size: clamp(34px, 7vw, 48px); line-height: 1; margin: 0 0 4px; color: var(--lam); text-wrap: balance; }
+  .card .sub { margin: 0 0 16px; opacity: .8; }
+  .card ol { padding-left: 20px; margin: 0 0 16px; line-height: 1.55; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  button { font-family: var(--display); font-weight: 800; font-size: 19px; border: 0; border-radius: 14px; padding: 10px 18px;
+           cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+  button:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+  button:focus-visible { outline: 3px solid var(--dusk); outline-offset: 2px; }
+  .primary { background: var(--bamboo); color: #fff; }
+  .ghost { background: #e6dfcb; color: var(--ink); }
+  details { margin-top: 16px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 12px; margin-top: 8px; font-size: 14px; }
+  .gloss b { color: var(--lam); }
+  .warn { font-size: 13px; color: var(--bad); margin-top: 10px; }
+  .miss { margin: 0 0 14px; padding-left: 18px; line-height: 1.6; }
+  .big { font-family: var(--display); font-size: 56px; font-weight: 800; line-height: 1; color: var(--bamboo); }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div class="hud">
+  <div class="chip" id="hearts">♥♥♥</div>
+  <div class="prompt"><span class="q" id="q" hidden></span></div>
+  <div class="chip" id="score">0</div>
+</div>
+<div class="heard" id="heard"><span class="dot"></span><span id="heardText">Chưa bật mic</span></div>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <h1>Cò Bay Xứ Nghệ</h1>
+    <p class="sub">Nói tiếng Nghệ để dẫn đường cho cò bay qua rặng tre.</p>
+    <ol>
+      <li>Cò tự bay. Mỗi cột tre có <b>2 khe</b>, mỗi khe ghi một từ tiếng Nghệ.</li>
+      <li>Trên đầu màn là <b>từ phổ thông</b>, ví dụ <i>đâu</i>.</li>
+      <li><b>Nói to</b> từ tiếng Nghệ đúng nghĩa (<i>mô</i>) thì cò bay vào khe đó.</li>
+      <li>Im lặng hoặc nói sai thì cò đâm cột, mất 1 ♥.</li>
+    </ol>
+    <div class="row">
+      <button class="primary" id="btnVoice">🎤 Chơi bằng giọng nói</button>
+      <button class="ghost" id="btnKeys">Chơi bằng phím ↑ ↓</button>
+    </div>
+    <div class="warn" id="warn" hidden></div>
+    <details>
+      <summary>Sổ từ xứ Nghệ (học trước cho dễ)</summary>
+      <div class="gloss" id="gloss"></div>
+    </details>
+  </div>
+</div>
+
+<div class="overlay" id="endOv" hidden>
+  <div class="card">
+    <h1>Cò mỏi cánh rồi!</h1>
+    <p class="sub">Qua được</p>
+    <div class="big" id="endScore">0</div>
+    <p class="sub" id="endBest"></p>
+    <div id="endMiss"></div>
+    <div class="row">
+      <button class="primary" id="btnAgain">Bay lại</button>
+      <button class="ghost" id="btnMenu">Về màn đầu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- Bộ từ ----------
+// [phổ thông, tiếng Nghệ, câu ví dụ, nhóm (tránh làm đáp án nhiễu cùng nghĩa), alias nhận giọng]
+const WORDS = [
+  ["đâu", "mô", "Đi mô rứa? = Đi đâu thế?", "nơi"],
+  ["kia", "tê", "Cấy nhà tê = Cái nhà kia", "xa"],
+  ["kìa", "tề", "Tề, cò bay tề! = Kìa, cò bay kìa!", "xa"],
+  ["đó / ấy", "nớ", "Cấy nớ = Cái đó", "xa"],
+  ["này", "ni", "Cấy ni = Cái này", "gần"],
+  ["sao", "răng", "Răng rứa? = Sao thế?", "hỏi"],
+  ["thế / vậy", "rứa", "Rứa à? = Thế à?", "thế"],
+  ["bây giờ", "chừ", "Chừ đi mô? = Giờ đi đâu?", "giờ"],
+  ["không", "nỏ", "Nỏ biết = Không biết", "phủ"],
+  ["thấy", "chộ", "Nỏ chộ chi = Chẳng thấy gì", "thấy"],
+  ["gì", "chi", "Mần chi rứa? = Làm gì thế?", "hỏi"],
+  ["cái", "cấy", "Cấy đọi = Cái bát", "cái"],
+  ["bát", "đọi", "Đọi cơm = Bát cơm", "đồ"],
+  ["nước", "nác", "Uống nác = Uống nước", "đồ", ["nát", "nhác"]],
+  ["trâu", "tru", "Chăn tru = Chăn trâu", "vật"],
+  ["xa", "ngái", "Ngái lắm = Xa lắm", "xa2"],
+  ["đầu", "trốc", "Đau trốc = Đau đầu", "người"],
+  ["sân", "cươi", "Ra cươi nhởi = Ra sân chơi", "nơi2", ["cười"]],
+  ["chơi", "nhởi", "Đi nhởi = Đi chơi", "làm", ["nhỡi", "nhổi"]],
+  ["làm", "mần", "Mần ăn = Làm ăn", "làm"],
+  ["mẹ", "mạ", "Mạ ơi! = Mẹ ơi!", "nhà"],
+  ["bố", "bọ", "Bọ đi mô rồi? = Bố đi đâu rồi?", "nhà"],
+  ["ngã", "bổ", "Bổ một cái = Ngã một cái", "làm2"],
+  ["chân", "cẳng", "Đau cẳng = Đau chân", "người"],
+  ["rừng núi", "rú", "Lên rú = Lên rừng", "nơi2"],
+  ["quả", "trấy", "Trấy cam = Quả cam", "đồ", ["trái"]],
+  ["chổi", "chủi", "Cấy chủi = Cái chổi", "đồ"],
+  ["mày", "mi", "Mi đi mô? = Mày đi đâu?", "ai"],
+  ["tao", "tau", "Tau nỏ biết = Tao không biết", "ai"],
+];
+const PHRASES = [
+  ["đi đâu thế", "đi mô rứa", "Câu hỏi quen nhất xứ Nghệ", "c1"],
+  ["sao thế", "răng rứa", "Răng rứa eng? = Sao thế anh?", "c2"],
+  ["không biết", "nỏ biết", "Tau nỏ biết = Tao không biết", "c3"],
+  ["làm gì thế", "mần chi rứa", "Mi mần chi rứa?", "c4"],
+  ["giờ đi đâu", "chừ đi mô", "Chừ đi mô hè?", "c5"],
+  ["không thấy gì", "nỏ chộ chi", "Tối quá nỏ chộ chi", "c6"],
+  ["cái này", "cấy ni", "Cấy ni là cấy chi?", "c7"],
+  ["xa lắm", "ngái lắm", "Nhà o ngái lắm", "c8"],
+];
+
+const strip = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+const norm = s => s.toLowerCase().normalize("NFC").replace(/[.,!?…"“”]/g, " ").replace(/\s+/g, " ").trim();
+
+// ---------- DOM ----------
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const $ = id => document.getElementById(id);
+const qEl = $("q"), scoreEl = $("score"), heartsEl = $("hearts"), toastEl = $("toast");
+const heardEl = $("heard"), heardText = $("heardText");
+
+$("gloss").innerHTML = WORDS.map(w => `<div><b>${w[1]}</b> = ${w[0]}</div>`).join("");
+
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener("resize", resize); resize();
+
+// ---------- Trạng thái ----------
+const UP_Y = 0.34, DOWN_Y = 0.70, GAP_H = 0.20, MID_Y = 0.52;
+let state = "menu", useVoice = false;
+let bird, poles, score, hearts, speed, tNext, lastPole, misses, elapsed, invuln;
+let best = 0; try { best = +localStorage.getItem("cobay_best") || 0; } catch (e) {}
+
+function reset() {
+  bird = { x: 0, y: H * MID_Y, ty: H * MID_Y, flap: 0 };
+  poles = []; score = 0; hearts = 3; elapsed = 0; invuln = 0; misses = [];
+  speed = 0; tNext = 0.6; lastPole = null;
+  updateHud();
+}
+
+function pickItem() {
+  const usePhrase = score >= 8 && Math.random() < 0.35;
+  const pool = usePhrase ? PHRASES : WORDS;
+  let item;
+  do { item = pool[Math.floor(Math.random() * pool.length)]; } while (lastPole && item[1] === lastPole.item[1] && pool.length > 1);
+  let wrong;
+  do { wrong = pool[Math.floor(Math.random() * pool.length)]; }
+  while (wrong === item || wrong[3] === item[3] || strip(wrong[1]).includes(strip(item[1])) || strip(item[1]).includes(strip(wrong[1])));
+  return { item, wrong };
+}
+
+function spawnPole() {
+  const { item, wrong } = pickItem();
+  const correctUp = Math.random() < 0.5;
+  const p = {
+    x: W + 40, w: Math.max(56, W * 0.06), item,
+    up: correctUp ? item[1] : wrong[1], down: correctUp ? wrong[1] : item[1],
+    correct: correctUp ? "up" : "down", choice: null, result: null,
+    aliases: { up: correctUp ? (item[4] || []) : (wrong[4] || []), down: correctUp ? (wrong[4] || []) : (item[4] || []) },
+  };
+  poles.push(p); lastPole = p;
+}
+
+// Cột tre kế tiếp chưa qua mặt cò
+function currentPole() { return poles.find(p => p.x + p.w > bird.x - 14 && !p.result); }
+let shownPole = null;
+
+// ---------- Nhận giọng ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recOn = false;
+
+function matchSide(text, p) {
+  const t = " " + norm(text) + " ", ts = strip(t);
+  const hit = (word, al) => {
+    const w = " " + norm(word) + " ";
+    if (t.includes(w)) return 2;
+    if (al.some(a => t.includes(" " + norm(a) + " "))) return 1;
+    if (ts.includes(strip(w))) return 1;
+    return 0;
+  };
+  const u = hit(p.up, p.aliases.up), d = hit(p.down, p.aliases.down);
+  if (!u && !d) return null;
+  if (u === d) { // trùng cả hai: lấy từ xuất hiện sau cùng trong câu
+    return ts.lastIndexOf(strip(norm(p.up))) > ts.lastIndexOf(strip(norm(p.down))) ? "up" : "down";
+  }
+  return u > d ? "up" : "down";
+}
+
+function startRec() {
+  if (!SR) return false;
+  rec = new SR();
+  rec.lang = "vi-VN"; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
+  rec.onresult = e => {
+    const p = currentPole();
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      heardText.textContent = "Nghe: " + r[0].transcript;
+      if (!p || state !== "play") continue;
+      for (let a = 0; a < r.length; a++) {
+        const side = matchSide(r[a].transcript, p);
+        if (side) { choose(p, side, true); break; }
+      }
+    }
+  };
+  rec.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      recOn = false; heardEl.classList.remove("on");
+      heardText.textContent = "Mic bị chặn. Bấm ↑ ↓ hoặc chạm nửa trên/dưới màn hình để chơi.";
+    }
+  };
+  rec.onend = () => { if (recOn) { try { rec.start(); } catch (e) {} } else heardEl.classList.remove("on"); };
+  try { rec.start(); recOn = true; heardEl.classList.add("on"); heardText.textContent = "Đang nghe…"; return true; }
+  catch (e) { return false; }
+}
+function stopRec() { recOn = false; try { rec && rec.stop(); } catch (e) {} }
+
+// Sau mỗi cột: khởi động lại phiên nghe để chữ cũ không ăn sang cột mới
+function refreshRec() { if (recOn && rec) { try { rec.abort(); } catch (e) {} } }
+
+function choose(p, side, byVoice) {
+  if (p.result) return;
+  p.choice = side;
+  bird.ty = H * (side === "up" ? UP_Y : DOWN_Y);
+  beep(side === "up" ? 660 : 440, 0.08);
+}
+
+// Phím / chạm dự phòng
+addEventListener("keydown", e => {
+  if (state !== "play") { if (e.key === "Enter" && state === "over") start(useVoice); return; }
+  const p = currentPole(); if (!p) return;
+  if (e.key === "ArrowUp" || e.key === "w") { choose(p, "up"); e.preventDefault(); }
+  if (e.key === "ArrowDown" || e.key === "s") { choose(p, "down"); e.preventDefault(); }
+});
+cv.addEventListener("pointerdown", e => {
+  if (state !== "play") return;
+  const p = currentPole(); if (p) choose(p, e.clientY < H * MID_Y ? "up" : "down");
+});
+
+// ---------- Âm thanh ----------
+let ac = null;
+function beep(f, d, type = "triangle", vol = 0.12) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = vol;
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
+    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+  } catch (e) {}
+}
+
+// ---------- Vòng lặp ----------
+let toastTimer;
+function toast(msg, kind) {
+  toastEl.textContent = msg; toastEl.className = "toast " + kind; toastEl.style.opacity = 1;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.style.opacity = 0, 2200);
+}
+function updateHud() {
+  scoreEl.textContent = score;
+  heartsEl.textContent = "♥".repeat(Math.max(0, hearts)) + "♡".repeat(Math.max(0, 3 - hearts));
+}
+
+function lose(p, why) {
+  p.result = "bad"; hearts--; invuln = 1.2;
+  misses.push(p.item);
+  toast(`${why}  ·  ${p.item[0]} = ${p.item[1]}`, "bad");
+  beep(160, 0.35, "sawtooth", 0.1);
+  updateHud();
+  if (hearts <= 0) setTimeout(gameOver, 500);
+}
+
+function step(dt) {
+  elapsed += dt;
+  // tốc độ: mỗi cột qua được nhanh thêm 3%, tối đa gấp đôi (ở cột 33)
+  // khoảng cách cột: ~4.6s lúc đầu, rút dần còn ~2.6s
+  const interval = Math.max(2.6, 4.6 - score * 0.07);
+  speed = Math.max(140, W * 0.17) * (1 + Math.min(score, 33) * 0.03);
+  tNext -= dt;
+  if (tNext <= 0) { spawnPole(); tNext = interval; }
+
+  bird.x = W * 0.24;
+  bird.y += (bird.ty - bird.y) * Math.min(1, dt * 3.5);
+  bird.flap += dt * 9;
+  if (invuln > 0) invuln -= dt;
+
+  for (const p of poles) {
+    p.x -= speed * dt;
+    const inX = bird.x + 16 > p.x && bird.x - 16 < p.x + p.w;
+    if (inX && !p.result) {
+      const yUp = H * UP_Y, yDn = H * DOWN_Y, half = H * GAP_H / 2 - 12;
+      const inUp = Math.abs(bird.y - yUp) < half, inDn = Math.abs(bird.y - yDn) < half;
+      if (!inUp && !inDn) lose(p, p.choice ? "Chưa kịp vào khe!" : "Cò đâm tre rồi!");
+      else if ((inUp ? "up" : "down") !== p.correct) lose(p, "Sai từ rồi");
+    }
+    if (!p.result && p.x + p.w < bird.x - 16) {
+      p.result = "good"; score++; updateHud();
+      if (score % 5 === 0 && score <= 33) toast(`Cò bay nhanh hơn rồi! 💨  ·  ${p.item[0]} = ${p.item[1]}`, "good");
+      else toast(`Đúng! ${p.item[0]} = ${p.item[1]}  ·  ${p.item[2]}`, "good");
+      beep(880, 0.12); setTimeout(() => beep(1175, 0.15), 90);
+    }
+  }
+  // cò quay lại giữa sau khi qua cột (bắt phải nói lại ở cột sau)
+  const cur = currentPole();
+  if (cur !== shownPole) {
+    shownPole = cur;
+    if (cur) {
+      qEl.hidden = false;
+      qEl.innerHTML = `<small>Nói tiếng Nghệ của</small>${cur.item[0]}`;
+      bird.ty = H * MID_Y; refreshRec();
+    } else qEl.hidden = true;
+  }
+  poles = poles.filter(p => p.x + p.w > -60);
+}
+
+// ---------- Vẽ ----------
+function drawBg(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#7ec4d8"); g.addColorStop(0.55, "#cfe9df"); g.addColorStop(1, "#f6d9a8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // mặt trời
+  ctx.fillStyle = "rgba(255,214,140,.85)"; ctx.beginPath(); ctx.arc(W * 0.8, H * 0.2, Math.min(W, H) * 0.07, 0, 7); ctx.fill();
+  // núi Hồng Lĩnh (xa, chậm)
+  mountains(t * 12, H * 0.62, H * 0.22, "#8fb3a6", 0.9);
+  mountains(t * 28, H * 0.70, H * 0.16, "#6f9a7f", 1.7);
+  // sông Lam
+  ctx.fillStyle = "#4f8fa8"; ctx.fillRect(0, H * 0.78, W, H * 0.06);
+  ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    const x = ((i * 170 - t * 60) % (W + 200) + W + 200) % (W + 200) - 100;
+    ctx.beginPath(); ctx.moveTo(x, H * 0.80 + (i % 3) * 6); ctx.lineTo(x + 50, H * 0.80 + (i % 3) * 6); ctx.stroke();
+  }
+  // ruộng lúa
+  ctx.fillStyle = "#9cc25a"; ctx.fillRect(0, H * 0.84, W, H * 0.16);
+  ctx.strokeStyle = "#7da744"; ctx.lineWidth = 2;
+  const off = (t * speedOr() ) % 24;
+  for (let x = -off; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, H * 0.86); ctx.lineTo(x + 6, H); ctx.stroke(); }
+}
+function speedOr() { return speed || 140; }
+function mountains(shift, base, amp, color, freq) {
+  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(0, H);
+  for (let x = 0; x <= W; x += 8) {
+    const u = (x + shift) * 0.004 * freq;
+    const y = base - amp * (0.55 + 0.3 * Math.sin(u) + 0.15 * Math.sin(u * 2.7 + 1));
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+}
+
+function drawPole(p) {
+  const yUp = H * UP_Y, yDn = H * DOWN_Y, gh = H * GAP_H;
+  const segs = [[0, yUp - gh / 2], [yUp + gh / 2, yDn - gh / 2], [yDn + gh / 2, H * 0.86]];
+  for (const [a, b] of segs) {
+    if (b <= a) continue;
+    const gr = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
+    const base = p.result === "bad" ? ["#a7714d", "#c9935f", "#8a5a3c"] : ["#4d7a2e", "#7fb04c", "#3f6a25"];
+    gr.addColorStop(0, base[0]); gr.addColorStop(0.45, base[1]); gr.addColorStop(1, base[2]);
+    ctx.fillStyle = gr; ctx.fillRect(p.x, a, p.w, b - a);
+    // đốt tre
+    ctx.fillStyle = "rgba(0,0,0,.18)";
+    for (let y = a + 30; y < b - 6; y += 46) ctx.fillRect(p.x - 2, y, p.w + 4, 5);
+    // mép
+    ctx.fillStyle = base[2]; ctx.fillRect(p.x - 5, a === 0 ? b - 12 : a, p.w + 10, 12);
+    if (a !== 0) ctx.fillRect(p.x - 5, b - 12, p.w + 10, 12);
+  }
+  // nhãn từ
+  label(p, p.up, yUp, "up"); label(p, p.down, yDn, "down");
+}
+function label(p, text, y, side) {
+  ctx.font = `800 ${Math.round(Math.min(34, Math.max(20, H * 0.042)))}px "Baloo 2", system-ui, sans-serif`;
+  const tw = ctx.measureText(text).width, pad = 12, bw = tw + pad * 2, bh = Math.min(48, Math.max(32, H * 0.06));
+  const cx = p.x + p.w / 2, x = cx - bw / 2;
+  let fill = "#fbf6e9", ink = "#1f2a24";
+  if (p.result) {
+    if (side === p.correct) { fill = "#3c8d4f"; ink = "#fff"; }
+    else if (p.choice === side || p.result === "bad") { fill = "#e8c8c2"; ink = "#7a2e28"; }
+  } else if (p.choice === side) { fill = "#f2a65a"; }
+  ctx.fillStyle = "rgba(0,0,0,.18)"; rr(x, y - bh / 2 + 3, bw, bh, 12); ctx.fill();
+  ctx.fillStyle = fill; rr(x, y - bh / 2, bw, bh, 12); ctx.fill();
+  ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, cx, y + 2);
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+
+function drawBird() {
+  const { x, y } = bird, s = Math.max(0.8, Math.min(1.3, H / 700));
+  if (invuln > 0 && Math.floor(invuln * 10) % 2) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const tilt = Math.max(-0.4, Math.min(0.4, (bird.ty - bird.y) / 200)); ctx.rotate(tilt);
+  // chân duỗi sau
+  ctx.strokeStyle = "#2b2b2b"; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(-14, 6); ctx.lineTo(-44, 12); ctx.moveTo(-14, 9); ctx.lineTo(-44, 16); ctx.stroke();
+  // thân
+  ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#cfd6d2"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 0, 22, 12, 0, 0, 7); ctx.fill(); ctx.stroke();
+  // cổ + đầu
+  ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 7; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(16, -4); ctx.quadraticCurveTo(26, -8, 30, -14); ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(31, -15, 6.5, 0, 7); ctx.fill();
+  // mỏ vàng
+  ctx.fillStyle = "#e9b23a"; ctx.beginPath(); ctx.moveTo(36, -17); ctx.lineTo(54, -13); ctx.lineTo(36, -12); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#1f2a24"; ctx.beginPath(); ctx.arc(32.5, -16.5, 1.6, 0, 7); ctx.fill();
+  // cánh vỗ
+  const a = Math.sin(bird.flap) * 0.9;
+  ctx.save(); ctx.translate(-2, -4); ctx.rotate(-a);
+  ctx.fillStyle = "#f4f6f4"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-10, -30, -30, -34); ctx.quadraticCurveTo(-18, -10, 0, 4); ctx.fill();
+  ctx.fillStyle = "#2b2b2b"; ctx.beginPath(); ctx.moveTo(-22, -30); ctx.quadraticCurveTo(-26, -34, -30, -34); ctx.quadraticCurveTo(-27, -26, -20, -22); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+let last = performance.now(), T = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; T += dt;
+  if (state === "play") step(dt);
+  drawBg(T);
+  if (poles) poles.forEach(drawPole);
+  if (bird) { if (state !== "play") { bird.x = W * 0.24; bird.y = H * MID_Y + Math.sin(T * 2) * 10; bird.flap += dt * 6; } drawBird(); }
+  requestAnimationFrame(frame);
+}
+
+// ---------- Màn ----------
+function start(voice) {
+  useVoice = voice;
+  $("startOv").hidden = true; $("endOv").hidden = true;
+  reset(); shownPole = null; state = "play";
+  if (voice && !recOn) {
+    if (!startRec()) heardText.textContent = "Trình duyệt không nhận giọng được. Bấm ↑ ↓ để chơi.";
+  }
+  if (!voice) { stopRec(); heardText.textContent = "Chế độ phím: ↑ / ↓ hoặc chạm nửa trên/dưới"; }
+}
+function gameOver() {
+  state = "over"; qEl.hidden = true;
+  if (score > best) { best = score; try { localStorage.setItem("cobay_best", best); } catch (e) {} }
+  $("endScore").textContent = score + " cột";
+  $("endBest").textContent = "Kỷ lục: " + best;
+  const uniq = [...new Map(misses.map(m => [m[1], m])).values()];
+  $("endMiss").innerHTML = uniq.length
+    ? `<p class="sub"><b>Ôn lại mấy từ này:</b></p><ul class="miss">${uniq.map(m => `<li><b>${m[1]}</b> = ${m[0]} · <i>${m[2]}</i></li>`).join("")}</ul>`
+    : "";
+  $("endOv").hidden = false;
+}
+
+$("btnVoice").onclick = () => {
+  if (!SR) { const w = $("warn"); w.hidden = false; w.textContent = "Trình duyệt này không nhận giọng nói. Dùng Chrome hoặc Edge, hoặc chơi bằng phím."; return; }
+  start(true);
+};
+$("btnKeys").onclick = () => start(false);
+$("btnAgain").onclick = () => start(useVoice);
+$("btnMenu").onclick = () => { stopRec(); state = "menu"; $("endOv").hidden = true; $("startOv").hidden = false; poles = []; heardText.textContent = "Chưa bật mic"; };
+
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
