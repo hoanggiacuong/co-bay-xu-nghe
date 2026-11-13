@@ -39,6 +39,9 @@
   .heard { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(14px, env(safe-area-inset-bottom));
            background: rgba(31,42,36,.85); color: var(--paper); padding: 8px 16px; border-radius: 999px; font-size: 15px;
            max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+  .heard.tap { pointer-events: auto; cursor: pointer; background: rgba(31,42,36,.92); box-shadow: 0 0 0 2px rgba(251,246,233,.7); }
+  .heard.tap:hover { background: var(--bamboo); }
+  .heard .mic { margin-left: 10px; font-weight: 600; color: #ffd98a; }
   .heard .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #888; margin-right: 8px; vertical-align: middle; }
   .heard.on .dot { background: #e5484d; animation: pulse 1s infinite; }
   @keyframes pulse { 50% { opacity: .3; } }
@@ -394,6 +397,7 @@ function startRec() {
     if (e.error === "not-allowed" || e.error === "service-not-allowed") {
       recOn = false; heardEl.classList.remove("on");
       heardText.textContent = "Mic bị chặn. Bấm ↑ ↓ hoặc chạm nửa trên/dưới màn hình để chơi.";
+      useVoice = false; voiceMuted = false; musicStart(); musicBtn(); // không có mic thì trả nhạc lại
     }
   };
   rec.onend = () => { if (recOn) { try { rec.start(); } catch (e) {} } else heardEl.classList.remove("on"); };
@@ -688,8 +692,24 @@ function start(voice) {
   if (voice && !recOn) {
     if (!startRec()) heardText.textContent = "Trình duyệt không nhận giọng được. Bấm ↑ ↓ để chơi.";
   }
-  if (!voice) { stopRec(); heardText.textContent = "Chế độ phím: ↑ / ↓ hoặc chạm nửa trên/dưới"; }
+  if (!voice) { stopRec(); showKeysHint(); } else heardEl.classList.remove("tap");
 }
+// Chế độ phím: dòng dưới đáy thành nút bật mic ngay giữa ván
+function showKeysHint() {
+  if (SR) {
+    heardText.innerHTML = `Chế độ phím ↑ ↓<span class="mic">🎤 Bấm để nói</span>`;
+    heardEl.classList.add("tap"); heardEl.setAttribute("role", "button"); heardEl.tabIndex = 0;
+  } else heardText.textContent = "Chế độ phím: ↑ / ↓ hoặc chạm nửa trên/dưới";
+}
+function switchToVoice() {
+  if (state !== "play" || !SR || recOn) return;
+  useVoice = true; heardEl.classList.remove("tap"); heardEl.removeAttribute("role"); heardEl.tabIndex = -1;
+  if (!startRec()) { heardText.textContent = "Không bật được mic. Tiếp tục bấm ↑ ↓ nhé."; return; }
+  voiceMuted = !voiceMusicOK; voiceMuted ? musicStop() : musicStart(); musicBtn();
+}
+heardEl.addEventListener("click", switchToVoice);
+heardEl.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); switchToVoice(); } });
+
 function gameOver() {
   state = "over"; qEl.hidden = true;
   if (score > best) { best = score; try { localStorage.setItem("cobay_best", best); } catch (e) {} }
@@ -713,7 +733,7 @@ $("btnMusic").onclick = () => {
 };
 setMusic(musicOn, true); // chỉ cập nhật nút; nhạc chỉ phát sau cú bấm đầu tiên
 $("btnAgain").onclick = () => start(useVoice);
-$("btnMenu").onclick = () => { stopRec(); state = "menu"; $("endOv").hidden = true; $("startOv").hidden = false; poles = []; heardText.textContent = "Chưa bật mic"; };
+$("btnMenu").onclick = () => { stopRec(); heardEl.classList.remove("tap"); state = "menu"; $("endOv").hidden = true; $("startOv").hidden = false; poles = []; heardText.textContent = "Chưa bật mic"; };
 
 reset();
 requestAnimationFrame(frame);
