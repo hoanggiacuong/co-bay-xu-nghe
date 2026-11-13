@@ -438,7 +438,8 @@ function beep(f, d, type = "triangle", vol = 0.12) {
 
 // ---------- Nhạc nền: file assets/bgm.mp3, phát lặp ----------
 let musicOn = true; try { musicOn = localStorage.getItem("cobay_music") !== "0"; } catch (e) {}
-const bgm = new Audio("assets/bgm.mp3");
+// Nhạc: "Inspirational Vietnam" – VPRODMUSIC_Asia_BGM, Pixabay (Pixabay Content License)
+const bgm = new Audio("assets/bgm.mp3?v=2");
 bgm.loop = true; bgm.volume = 0.35; bgm.preload = "auto";
 function musicStart() { if (musicOn && !voiceMuted && bgm.paused) bgm.play().catch(() => {}); }
 function musicStop() { bgm.pause(); }
