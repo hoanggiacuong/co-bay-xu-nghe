@@ -440,14 +440,20 @@ function beep(f, d, type = "triangle", vol = 0.12) {
 let musicOn = true; try { musicOn = localStorage.getItem("cobay_music") !== "0"; } catch (e) {}
 const bgm = new Audio("assets/bgm.mp3");
 bgm.loop = true; bgm.volume = 0.35; bgm.preload = "auto";
-function musicStart() { if (musicOn && bgm.paused) bgm.play().catch(() => {}); }
+function musicStart() { if (musicOn && !voiceMuted && bgm.paused) bgm.play().catch(() => {}); }
 function musicStop() { bgm.pause(); }
+// Chơi bằng mic: tắt nhạc để mic khỏi bắt tiếng nhạc, tới khi người chơi tự bấm ♪ bật lại
+let voiceMuted = false, voiceMusicOK = false; // voiceMusicOK: người chơi đã tự bật nhạc khi dùng mic
+function musicBtn() {
+  const on = musicOn && !voiceMuted, b = $("btnMusic");
+  b.textContent = on ? "♪" : "♪̸"; b.setAttribute("aria-pressed", on);
+  b.title = voiceMuted ? "Nhạc đang tắt khi chơi bằng mic. Bấm để bật" : on ? "Tắt nhạc" : "Bật nhạc";
+  b.style.opacity = on ? 1 : 0.55;
+}
 function setMusic(on, init) {
   musicOn = on; if (!init) try { localStorage.setItem("cobay_music", on ? "1" : "0"); } catch (e) {}
-  const b = $("btnMusic");
-  b.textContent = on ? "♪" : "♪̸"; b.setAttribute("aria-pressed", on);
-  b.title = on ? "Tắt nhạc" : "Bật nhạc"; b.style.opacity = on ? 1 : 0.55;
-  if (!init) on ? musicStart() : musicStop();
+  musicBtn();
+  if (!init) (on && !voiceMuted) ? musicStart() : musicStop();
 }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { bgm.pause(); if (ac) ac.suspend(); }
@@ -675,7 +681,9 @@ function start(voice) {
   useVoice = voice;
   $("startOv").hidden = true; $("endOv").hidden = true;
   reset(); shownPole = null; state = "play";
-  musicStart();
+  voiceMuted = voice && !voiceMusicOK;
+  voiceMuted ? musicStop() : musicStart();
+  musicBtn();
   if (voice && !recOn) {
     if (!startRec()) heardText.textContent = "Trình duyệt không nhận giọng được. Bấm ↑ ↓ để chơi.";
   }
@@ -698,7 +706,10 @@ $("btnVoice").onclick = () => {
   start(true);
 };
 $("btnKeys").onclick = () => start(false);
-$("btnMusic").onclick = () => setMusic(!musicOn);
+$("btnMusic").onclick = () => {
+  if (voiceMuted) { voiceMuted = false; voiceMusicOK = true; setMusic(true); }   // người chơi chủ động bật lại khi đang dùng mic
+  else setMusic(!musicOn);
+};
 setMusic(musicOn, true); // chỉ cập nhật nút; nhạc chỉ phát sau cú bấm đầu tiên
 $("btnAgain").onclick = () => start(useVoice);
 $("btnMenu").onclick = () => { stopRec(); state = "menu"; $("endOv").hidden = true; $("startOv").hidden = false; poles = []; heardText.textContent = "Chưa bật mic"; };
