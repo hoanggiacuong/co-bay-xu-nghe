@@ -151,6 +151,15 @@ const WORDS = [
   ["chổi", "chủi", "Cấy chủi = Cái chổi", "đồ"],
   ["mày", "mi", "Mi đi mô? = Mày đi đâu?", "ai"],
   ["tao", "tau", "Tau nỏ biết = Tao không biết", "ai"],
+  ["nó / hắn", "hấn", "Hấn đi mô rồi? = Nó đi đâu rồi?", "ai2"],
+  ["anh", "eng", "Eng ơi, chờ em với! = Anh ơi, chờ em với!", "ai3"],
+  ["chị", "ả", "Ả đi chợ rồi = Chị đi chợ rồi", "ai4"],
+  ["cô", "o", "O ơi, cho con hỏi = Cô ơi, cho con hỏi", "ai5"],
+  ["vào", "vô", "Vô nhà uống nác = Vào nhà uống nước", "đi"],
+  ["đường", "đàng", "Đàng ngái lắm = Đường xa lắm", "nơi3"],
+  ["thế này", "ri", "Mần ri nầy = Làm thế này này", "gần2"],
+  ["nhỉ", "hè", "Đẹp hè! = Đẹp nhỉ!", "hỏi2"],
+  ["mệt", "nhọc", "Mần cả ngày nhọc lắm = Làm cả ngày mệt lắm", "người2"],
 ];
 const PHRASES = [
   ["đi đâu thế", "đi mô rứa", "Câu hỏi quen nhất xứ Nghệ", "c1"],
@@ -161,6 +170,87 @@ const PHRASES = [
   ["không thấy gì", "nỏ chộ chi", "Tối quá nỏ chộ chi", "c6"],
   ["cái này", "cấy ni", "Cấy ni là cấy chi?", "c7"],
   ["xa lắm", "ngái lắm", "Nhà o ngái lắm", "c8"],
+  ["ở đâu", "ở mô", "Nhà eng ở mô? = Nhà anh ở đâu?", "c9"],
+  ["không có gì", "nỏ có chi", "Cảm ơn o! – Nỏ có chi!", "c10"],
+  ["đi chơi", "đi nhởi", "Chừ đi nhởi nờ = Giờ đi chơi nào", "c11"],
+  ["ra sân", "ra cươi", "Ra cươi phơi lúa = Ra sân phơi lúa", "c12"],
+  ["cái gì thế", "cấy chi rứa", "Cấy chi rứa mạ? = Cái gì thế mẹ?", "c13"],
+  ["đau đầu", "đau trốc", "Nắng ri đau trốc = Nắng thế này đau đầu", "c14"],
+  ["uống nước", "uống nác", "Vô uống nác đã = Vào uống nước đã", "c15"],
+  ["bát cơm", "đọi cơm", "Ăn thêm đọi cơm = Ăn thêm bát cơm", "c16"],
+  ["chăn trâu", "chăn tru", "Đi chăn tru ngoài đồng", "c17"],
+  ["mẹ ơi", "mạ ơi", "Mạ ơi, con về rồi!", "c18"],
+  ["bố đi đâu", "bọ đi mô", "Bọ đi mô rồi mạ? = Bố đi đâu rồi mẹ?", "c19"],
+  ["thế à", "rứa à", "Rứa à? Tau nỏ biết = Thế à? Tao không biết", "c20"],
+  ["thế này", "như ri", "Mần như ri nầy = Làm như thế này này", "c21"],
+  ["thế kia", "như tê", "Đừng mần như tê = Đừng làm như thế kia", "c22"],
+  ["như thế", "như rứa", "Mần như rứa là được = Làm như thế là được", "c23"],
+  ["thế thì", "rứa thì", "Rứa thì đi luôn = Thế thì đi luôn", "c24"],
+  ["sao lại thế", "răng lại rứa", "Răng lại rứa hè? = Sao lại thế nhỉ?", "c25"],
+  ["làm sao", "mần răng", "Chừ mần răng? = Giờ làm sao?", "c26"],
+  ["không sao", "nỏ răng", "Bổ một cái, nỏ răng! = Ngã một cái, không sao!", "c27"],
+  ["không đâu", "nỏ mô", "Tau nỏ đi mô = Tao không đi đâu", "c28"],
+  ["không phải", "nỏ phải", "Nỏ phải tau = Không phải tao", "c29"],
+  ["không có", "nỏ có", "Nhà nỏ có ai = Nhà không có ai", "c30"],
+  ["khi nào", "khi mô", "Khi mô eng về? = Khi nào anh về?", "c31"],
+  ["đằng kia", "đằng tê", "Nhà o ở đằng tê = Nhà cô ở đằng kia", "c32"],
+  ["cái kia", "cấy tê", "Cấy tê là cấy chi? = Cái kia là cái gì?", "c33"],
+  ["cái đó", "cấy nớ", "Đưa tau cấy nớ = Đưa tao cái đó", "c34"],
+  ["chỗ này", "chỗ ni", "Ngồi chỗ ni = Ngồi chỗ này", "c35"],
+  ["chỗ kia", "chỗ tê", "Ra chỗ tê nhởi = Ra chỗ kia chơi", "c36"],
+  ["vào nhà", "vô nhà", "Vô nhà đã eng = Vào nhà đã anh", "c37"],
+  ["anh đi đâu", "eng đi mô", "Eng đi mô rứa? = Anh đi đâu thế?", "c38"],
+  ["mày làm gì", "mi mần chi", "Mi mần chi đó? = Mày làm gì đấy?", "c39"],
+  ["tao không biết", "tau nỏ biết", "Hỏi chi, tau nỏ biết = Hỏi gì, tao không biết", "c40"],
+  ["mẹ đi đâu", "mạ đi mô", "Mạ đi mô rồi bọ? = Mẹ đi đâu rồi bố?", "c41"],
+  ["bây giờ làm gì", "chừ mần chi", "Chừ mần chi hè? = Giờ làm gì nhỉ?", "c42"],
+  ["đi đường", "đi đàng", "Đi đàng cẩn thận = Đi đường cẩn thận", "c43"],
+  ["lên rừng", "lên rú", "Lên rú hái củi = Lên rừng hái củi", "c44"],
+  ["ngã một cái", "bổ một cái", "Chạy nhanh bổ một cái", "c45"],
+  ["đau chân", "đau cẳng", "Đi bộ ngái đau cẳng = Đi bộ xa đau chân", "c46"],
+  ["quả cam", "trấy cam", "Trấy cam Xã Đoài ngọt lắm", "c47"],
+  ["cái chổi", "cấy chủi", "Lấy cấy chủi quét cươi = Lấy cái chổi quét sân", "c48"],
+  ["chơi với tao", "nhởi với tau", "Mi nhởi với tau nờ = Mày chơi với tao đi", "c49"],
+  ["nó đi đâu", "hấn đi mô", "Hấn đi mô từ sáng? = Nó đi đâu từ sáng?", "c50"],
+  // cụm ngắn ghép từ các từ gốc ở trên (chưa có câu ví dụ)
+  ...[
+    ["đi đâu về", "đi mô về"], ["về đâu", "về mô"], ["ở đâu ra", "ở mô ra"], ["đâu rồi", "mô rồi"],
+    ["đâu có", "mô có"], ["đâu phải", "mô phải"], ["đi đâu đấy", "đi mô đó"],
+    ["cái gì đây", "cấy chi đây"], ["làm gì đấy", "mần chi đó"], ["làm cái gì", "mần cấy chi"],
+    ["sao không đi", "răng nỏ đi"], ["sao không ăn", "răng nỏ ăn"], ["sao không nói", "răng nỏ nói"],
+    ["sao biết", "răng biết"], ["sao thế nhỉ", "răng rứa hè"], ["làm sao biết", "mần răng biết"],
+    ["thế nhỉ", "rứa hè"], ["đẹp nhỉ", "đẹp hè"], ["xa nhỉ", "ngái hè"],
+    ["thế thôi", "rứa thôi"], ["thế đấy", "rứa đó"], ["thế là", "rứa là"],
+    ["không thấy đâu", "nỏ chộ mô"], ["không thấy ai", "nỏ chộ ai"], ["thấy không", "chộ nỏ"],
+    ["thấy chưa", "chộ chưa"], ["thấy rồi", "chộ rồi"],
+    ["không làm gì", "nỏ mần chi"], ["không đi đâu", "nỏ đi mô"], ["không ăn gì", "nỏ ăn chi"],
+    ["không nói gì", "nỏ nói chi"], ["không chơi", "nỏ nhởi"], ["không làm", "nỏ mần"],
+    ["không xa", "nỏ ngái"], ["không thấy", "nỏ chộ"], ["không vào", "nỏ vô"],
+    ["không sao đâu", "nỏ răng mô"],
+    ["cái này là gì", "cấy ni là chi"], ["cái đó là gì", "cấy nớ là chi"], ["cái nhà", "cấy nhà"],
+    ["người kia", "người tê"], ["người này", "người ni"], ["nhà này", "nhà ni"], ["nhà kia", "nhà tê"],
+    ["bên kia", "bên tê"], ["bên này", "bên ni"],
+    ["hôm nay", "hôm ni"], ["năm nay", "năm ni"], ["tối nay", "tối ni"], ["sáng nay", "sáng ni"], ["lúc này", "lúc ni"],
+    ["giờ thì sao", "chừ răng"], ["giờ đi thôi", "chừ đi thôi"], ["giờ về", "chừ về"], ["giờ ăn cơm", "chừ ăn cơm"],
+    ["xa quá", "ngái quá"], ["đường xa", "đàng ngái"], ["đường này", "đàng ni"], ["đường kia", "đàng tê"],
+    ["vào đi", "vô đi"], ["vào đây", "vô đây"], ["vào trong", "vô trong"], ["vào ăn cơm", "vô ăn cơm"], ["đi vào", "đi vô"],
+    ["uống nước đi", "uống nác đi"], ["nước nóng", "nác nóng"], ["nước lạnh", "nác lạnh"], ["lấy nước", "lấy nác"],
+    ["gánh nước", "gánh nác"], ["bát nước", "đọi nác"], ["rửa bát", "rửa đọi"], ["bát này", "đọi ni"],
+    ["con trâu", "con tru"], ["trâu ăn cỏ", "tru ăn cỏ"], ["cưỡi trâu", "cưỡi tru"],
+    ["đau đầu quá", "đau trốc quá"], ["gội đầu", "gội trốc"], ["cái đầu", "cấy trốc"],
+    ["rửa chân", "rửa cẳng"], ["chân tay", "cẳng tay"],
+    ["ngoài sân", "ngoài cươi"], ["quét sân", "quét cươi"], ["chơi ngoài sân", "nhởi ngoài cươi"],
+    ["trong rừng", "trong rú"], ["đi rừng", "đi rú"],
+    ["hái quả", "hái trấy"], ["quả này", "trấy ni"], ["quả bưởi", "trấy bưởi"], ["lấy cái chổi", "lấy cấy chủi"],
+    ["bố mẹ", "bọ mạ"], ["bố ơi", "bọ ơi"], ["hỏi mẹ", "hỏi mạ"], ["về với mẹ", "về với mạ"],
+    ["anh ơi", "eng ơi"], ["anh ấy", "eng nớ"], ["chị ấy", "ả nớ"], ["cô ấy", "o nớ"], ["cô ơi", "o ơi"], ["chị ơi", "ả ơi"],
+    ["mày đi đâu", "mi đi mô"], ["mày đâu rồi", "mi mô rồi"], ["mày biết không", "mi biết nỏ"],
+    ["tao đây", "tau đây"], ["tao đi đây", "tau đi đây"],
+    ["nó kìa", "hấn tề"], ["nó làm gì", "hấn mần chi"], ["nó không biết", "hấn nỏ biết"],
+    ["ngã rồi", "bổ rồi"], ["đi chơi đâu", "đi nhởi mô"], ["chơi gì", "nhởi chi"], ["chơi đi", "nhởi đi"], ["mải chơi", "ham nhởi"],
+    ["làm việc", "mần việc"], ["làm ăn", "mần ăn"], ["làm nhà", "mần nhà"], ["làm ruộng", "mần ruộng"],
+    ["mệt quá", "nhọc quá"], ["mệt lắm", "nhọc lắm"],
+  ].map(([pt, ng], i) => [pt, ng, "", "q" + i]),
 ];
 
 const strip = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
@@ -172,7 +262,18 @@ const $ = id => document.getElementById(id);
 const qEl = $("q"), scoreEl = $("score"), heartsEl = $("hearts"), toastEl = $("toast");
 const heardEl = $("heard"), heardText = $("heardText");
 
-$("gloss").innerHTML = WORDS.map(w => `<div><b>${w[1]}</b> = ${w[0]}</div>`).join("");
+$("gloss").innerHTML = WORDS.map(w => `<div><b>${w[1]}</b> = ${w[0]}</div>`).join("")
+  + `<div style="grid-column:1/-1;margin-top:6px;font-weight:600">Câu ngắn (từ cột 5)</div>`
+  + PHRASES.map(w => `<div><b>${w[1]}</b> = ${w[0]}</div>`).join("");
+
+// ---------- Ảnh màu nước (thiếu ảnh nào thì vẽ bằng code thay thế) ----------
+const IMG = {};
+for (const [k, src] of Object.entries({
+  far: "assets/bg_far.jpg", near: "assets/bg_near.png", bamboo: "assets/bamboo.png",
+  crane0: "assets/crane_0.png", crane1: "assets/crane_1.png", leaf: "assets/leaf.png", sun: "assets/sun.png",
+})) {
+  const im = new Image(); im.onload = () => { IMG[k] = im; }; im.src = src;
+}
 
 let W = 0, H = 0, DPR = 1;
 function resize() {
@@ -197,7 +298,8 @@ function reset() {
 }
 
 function pickItem() {
-  const usePhrase = score >= 8 && Math.random() < 0.35;
+  // từ cột 5 bắt đầu có câu, càng về sau càng nhiều câu (tối đa 60%)
+  const usePhrase = score >= 5 && Math.random() < Math.min(0.6, 0.25 + (score - 5) * 0.02);
   const pool = usePhrase ? PHRASES : WORDS;
   let item;
   do { item = pool[Math.floor(Math.random() * pool.length)]; } while (lastPole && item[1] === lastPole.item[1] && pool.length > 1);
@@ -214,6 +316,7 @@ function spawnPole() {
     x: W + 40, w: Math.max(56, W * 0.06), item,
     up: correctUp ? item[1] : wrong[1], down: correctUp ? wrong[1] : item[1],
     correct: correctUp ? "up" : "down", choice: null, result: null,
+    leaf: Math.random() < 0.7 ? { seg: Math.random() < 0.5 ? 0 : 1, t: 0.35 + Math.random() * 0.4, flip: Math.random() < 0.5 } : null,
     aliases: { up: correctUp ? (item[4] || []) : (wrong[4] || []), down: correctUp ? (wrong[4] || []) : (item[4] || []) },
   };
   poles.push(p); lastPole = p;
@@ -352,7 +455,7 @@ function step(dt) {
     if (!p.result && p.x + p.w < bird.x - 16) {
       p.result = "good"; score++; updateHud();
       if (score % 5 === 0 && score <= 33) toast(`Cò bay nhanh hơn rồi! 💨  ·  ${p.item[0]} = ${p.item[1]}`, "good");
-      else toast(`Đúng! ${p.item[0]} = ${p.item[1]}  ·  ${p.item[2]}`, "good");
+      else toast(`Đúng! ${p.item[0]} = ${p.item[1]}` + (p.item[2] ? `  ·  ${p.item[2]}` : ""), "good");
       beep(880, 0.12); setTimeout(() => beep(1175, 0.15), 90);
     }
   }
@@ -370,7 +473,21 @@ function step(dt) {
 }
 
 // ---------- Vẽ ----------
+// Lặp ngang một ảnh: cao h, đáy chạm y = bottom, trôi theo quãng đường dist
+function tileX(img, h, bottom, dist) {
+  const w = img.width * (h / img.height);
+  const off = ((dist % w) + w) % w;
+  for (let x = -off; x < W; x += w) ctx.drawImage(img, Math.floor(x), bottom - h, Math.ceil(w) + 1, h);
+}
+let travelled = 0;
 function drawBg(t) {
+  if (IMG.far) {
+    tileX(IMG.far, H, H, travelled * 0.18);
+    // mặt trời đứng yên (ở rất xa nên không trôi theo nền)
+    if (IMG.sun) { const s = H / 1024, sw = IMG.sun.width * s, sh = IMG.sun.height * s;
+      ctx.drawImage(IMG.sun, W * 0.8 - sw / 2, H * 0.127 - sh / 2, sw, sh); }
+    return;
+  }
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, "#7ec4d8"); g.addColorStop(0.55, "#cfe9df"); g.addColorStop(1, "#f6d9a8");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -405,7 +522,33 @@ function mountains(shift, base, amp, color, freq) {
 
 function drawPole(p) {
   const yUp = H * UP_Y, yDn = H * DOWN_Y, gh = H * GAP_H;
-  const segs = [[0, yUp - gh / 2], [yUp + gh / 2, yDn - gh / 2], [yDn + gh / 2, H * 0.86]];
+  const segs = [[0, yUp - gh / 2], [yUp + gh / 2, yDn - gh / 2], [yDn + gh / 2, IMG.bamboo ? H : H * 0.86]];
+  if (IMG.bamboo) {
+    // ảnh tre: rộng hơn cột va chạm một chút vì có lá; lặp dọc trong từng đoạn
+    const im = IMG.bamboo, dw = p.w * 1.12, dh = im.height * (dw / im.width), dx = p.x + p.w / 2 - dw / 2;
+    for (const [a, b] of segs) {
+      if (b <= a) continue;
+      ctx.save(); ctx.beginPath(); ctx.rect(dx - 4, a, dw + 8, b - a); ctx.clip();
+      if (p.result === "bad") ctx.filter = "sepia(.8) saturate(1.4) hue-rotate(-15deg) brightness(.95)";
+      for (let y = a - ((a * 0.37) % dh); y < b; y += dh) ctx.drawImage(im, dx, y, dw, dh);
+      ctx.restore();
+      // mặt cắt ống tre ở mép khe
+      ctx.fillStyle = p.result === "bad" ? "#b98a5e" : "#cfe0a6"; ctx.strokeStyle = "rgba(60,80,30,.55)"; ctx.lineWidth = 2;
+      for (const y of [a, b]) {
+        if (y <= 0 || y >= H) continue;
+        ctx.beginPath(); ctx.ellipse(p.x + p.w / 2, y, p.w * 0.52, 6, 0, 0, 7); ctx.fill(); ctx.stroke();
+      }
+    }
+    // cụm lá tre: mỗi cột một vị trí ngẫu nhiên, đoạn trên hoặc đoạn giữa
+    if (IMG.leaf && p.leaf) {
+      const lw = p.w * 1.3, lh = IMG.leaf.height * (lw / IMG.leaf.width);
+      const [a, b] = segs[p.leaf.seg], ly = a + (b - a) * p.leaf.t;
+      ctx.save(); ctx.translate(p.x + p.w / 2, ly); if (p.leaf.flip) ctx.scale(-1, 1);
+      ctx.drawImage(IMG.leaf, p.w * 0.35, -lh * 0.8, lw, lh); ctx.restore();
+    }
+    label(p, p.up, yUp, "up"); label(p, p.down, yDn, "down");
+    return;
+  }
   for (const [a, b] of segs) {
     if (b <= a) continue;
     const gr = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
@@ -442,6 +585,12 @@ function drawBird() {
   if (invuln > 0 && Math.floor(invuln * 10) % 2) return;
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
   const tilt = Math.max(-0.4, Math.min(0.4, (bird.ty - bird.y) / 200)); ctx.rotate(tilt);
+  if (IMG.crane0 && IMG.crane1) {
+    const im = Math.sin(bird.flap) > 0 ? IMG.crane0 : IMG.crane1;
+    const dw = 115, dh = im.height * (dw / im.width);
+    ctx.drawImage(im, -dw * 0.55, -dh * 0.55, dw, dh);
+    ctx.restore(); return;
+  }
   // chân duỗi sau
   ctx.strokeStyle = "#2b2b2b"; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(-14, 6); ctx.lineTo(-44, 12); ctx.moveTo(-14, 9); ctx.lineTo(-44, 16); ctx.stroke();
@@ -468,8 +617,10 @@ let last = performance.now(), T = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; T += dt;
   if (state === "play") step(dt);
+  travelled += (state === "play" ? speedOr() : 60) * dt;
   drawBg(T);
   if (poles) poles.forEach(drawPole);
+  if (IMG.near) tileX(IMG.near, H * 0.17, H + 4, travelled);
   if (bird) { if (state !== "play") { bird.x = W * 0.24; bird.y = H * MID_Y + Math.sin(T * 2) * 10; bird.flap += dt * 6; } drawBird(); }
   requestAnimationFrame(frame);
 }
@@ -491,7 +642,7 @@ function gameOver() {
   $("endBest").textContent = "Kỷ lục: " + best;
   const uniq = [...new Map(misses.map(m => [m[1], m])).values()];
   $("endMiss").innerHTML = uniq.length
-    ? `<p class="sub"><b>Ôn lại mấy từ này:</b></p><ul class="miss">${uniq.map(m => `<li><b>${m[1]}</b> = ${m[0]} · <i>${m[2]}</i></li>`).join("")}</ul>`
+    ? `<p class="sub"><b>Ôn lại mấy từ này:</b></p><ul class="miss">${uniq.map(m => `<li><b>${m[1]}</b> = ${m[0]}${m[2] ? ` · <i>${m[2]}</i>` : ""}</li>`).join("")}</ul>`
     : "";
   $("endOv").hidden = false;
 }
