@@ -29,6 +29,8 @@
          pointer-events: none; gap: 12px; }
   .chip { background: rgba(251,246,233,.92); border-radius: 14px; padding: 6px 14px; font-family: var(--display);
           font-weight: 800; font-size: 20px; box-shadow: 0 2px 0 rgba(0,0,0,.15); font-variant-numeric: tabular-nums; }
+  .right { display: flex; gap: 8px; align-items: flex-start; }
+  .chip.music { pointer-events: auto; cursor: pointer; border: 0; color: var(--ink); min-width: 44px; padding: 6px 12px; }
   .prompt { text-align: center; flex: 1; }
   .prompt .q { display: inline-block; background: var(--ink); color: var(--paper); border-radius: 16px; padding: 8px 20px;
                font-family: var(--display); font-size: clamp(20px, 4vw, 30px); font-weight: 800; }
@@ -77,7 +79,10 @@
 <div class="hud">
   <div class="chip" id="hearts">♥♥♥</div>
   <div class="prompt"><span class="q" id="q" hidden></span></div>
-  <div class="chip" id="score">0</div>
+  <div class="right">
+    <button class="chip music" id="btnMusic" title="Tắt nhạc" aria-label="Nhạc nền" aria-pressed="true">♪</button>
+    <div class="chip" id="score">0</div>
+  </div>
 </div>
 <div class="heard" id="heard"><span class="dot"></span><span id="heardText">Chưa bật mic</span></div>
 <div class="toast" id="toast"></div>
@@ -431,6 +436,88 @@ function beep(f, d, type = "triangle", vol = 0.12) {
   } catch (e) {}
 }
 
+// ---------- Nhạc nền: giai điệu ngũ cung (hơi Bắc, D–E–G–A–B), sáng tác riêng cho game ----------
+// Nốt ngắn: tiếng gảy kiểu đàn tranh. Nốt dài: ngân có luyến + rung kiểu đàn bầu. Mõ gõ nhịp.
+const NOTE = { D3: 146.83, G3: 196.0, A3: 220.0, D4: 293.66, E4: 329.63, G4: 392.0, A4: 440.0, B4: 493.88, D5: 587.33, E5: 659.25 };
+const MELODY = [
+  ["A4", 1], ["B4", .5], ["A4", .5], ["G4", 1], ["E4", 1], ["D4", 2], ["E4", 1], ["G4", 1],
+  ["A4", 1], ["D5", 1], ["B4", .5], ["A4", .5], ["G4", 1], ["A4", 3], [null, 1],
+  ["D5", 1], ["E5", .5], ["D5", .5], ["B4", 1], ["A4", 1], ["G4", 1], ["A4", .5], ["G4", .5], ["E4", 2],
+  ["G4", 1], ["A4", 1], ["E4", .5], ["D4", .5], ["E4", 1], ["D4", 3], [null, 1],
+];
+const BASS = ["D3", "D3", "G3", "A3", "G3", "A3", "D3", "D3"]; // mỗi ô = 4 phách
+let musicOn = true; try { musicOn = localStorage.getItem("cobay_music") !== "0"; } catch (e) {}
+const music = { bus: null, timer: null, next: 0, mi: 0, beat: 0, playing: false };
+
+function audio() { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); return ac; }
+function bus() {
+  if (!music.bus) { music.bus = audio().createGain(); music.bus.gain.value = 0.16; music.bus.connect(ac.destination); }
+  return music.bus;
+}
+function pluck(f, t, dur, vol) {           // gảy dây
+  const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+  o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, t + Math.min(1.6, dur + 0.6));
+  const g2 = ac.createGain(); g2.gain.value = 0.25;
+  o.connect(g); o2.connect(g2).connect(g); g.connect(bus());
+  o.start(t); o2.start(t); o.stop(t + 1.8); o2.stop(t + 1.8);
+}
+function bau(f, t, dur, vol) {             // ngân kiểu đàn bầu: luyến từ dưới lên, rung cuối nốt
+  const o = ac.createOscillator(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(f * 0.94, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.18);
+  lfo.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.012, t + dur * 0.6);
+  lfo.connect(lg).connect(o.frequency);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.04);
+  g.gain.setValueAtTime(vol, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.25);
+  o.connect(g).connect(bus()); o.start(t); lfo.start(t); o.stop(t + dur + 0.3); lfo.stop(t + dur + 0.3);
+}
+function mo(t, vol) {                      // tiếng mõ
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(950, t); o.frequency.exponentialRampToValueAtTime(700, t + 0.05);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+  o.connect(g).connect(bus()); o.start(t); o.stop(t + 0.1);
+}
+function scheduleMusic() {
+  // nhạc nhanh dần nhẹ theo tốc độ cò
+  const bpm = 84 + Math.min(score || 0, 33) * 0.5, spb = 60 / bpm;
+  while (music.next < ac.currentTime + 0.25) {
+    const [n, beats] = MELODY[music.mi], t = music.next, dur = beats * spb;
+    if (n) (beats >= 2 ? bau : pluck)(NOTE[n], t, dur, beats >= 2 ? 0.5 : 0.55);
+    // phách đệm trong khoảng nốt này
+    for (let b = Math.ceil(music.beat - 1e-6); b < music.beat + beats - 1e-6; b++) {
+      const tb = t + (b - music.beat) * spb, inBar = ((b % 4) + 4) % 4;
+      if (inBar === 0) pluck(NOTE[BASS[Math.floor(b / 4) % BASS.length]], tb, 2 * spb, 0.35);
+      mo(tb, inBar === 0 ? 0.22 : inBar === 2 ? 0.14 : 0.06);
+    }
+    music.beat += beats; music.next += dur;
+    music.mi = (music.mi + 1) % MELODY.length;
+    if (music.mi === 0) music.beat = 0;
+  }
+}
+function musicStart() {
+  if (!musicOn || music.playing) return;
+  try {
+    audio(); if (ac.state === "suspended") ac.resume();
+    music.playing = true; music.mi = 0; music.beat = 0; music.next = ac.currentTime + 0.1;
+    bus().gain.cancelScheduledValues(ac.currentTime); bus().gain.setValueAtTime(0.16, ac.currentTime);
+    music.timer = setInterval(scheduleMusic, 60); scheduleMusic();
+  } catch (e) {}
+}
+function musicStop() {
+  if (!music.playing) return;
+  music.playing = false; clearInterval(music.timer);
+  try { bus().gain.setTargetAtTime(0, ac.currentTime, 0.15); } catch (e) {}
+}
+function setMusic(on, init) {
+  musicOn = on; if (!init) try { localStorage.setItem("cobay_music", on ? "1" : "0"); } catch (e) {}
+  const b = $("btnMusic");
+  b.textContent = on ? "♪" : "♪̸"; b.setAttribute("aria-pressed", on);
+  b.title = on ? "Tắt nhạc" : "Bật nhạc"; b.style.opacity = on ? 1 : 0.55;
+  if (!init) on ? musicStart() : musicStop();
+}
+document.addEventListener("visibilitychange", () => { if (!ac) return; document.hidden ? ac.suspend() : ac.resume(); });
+
 // ---------- Vòng lặp ----------
 let toastTimer;
 function toast(msg, kind) {
@@ -652,6 +739,7 @@ function start(voice) {
   useVoice = voice;
   $("startOv").hidden = true; $("endOv").hidden = true;
   reset(); shownPole = null; state = "play";
+  musicStart();
   if (voice && !recOn) {
     if (!startRec()) heardText.textContent = "Trình duyệt không nhận giọng được. Bấm ↑ ↓ để chơi.";
   }
@@ -674,6 +762,8 @@ $("btnVoice").onclick = () => {
   start(true);
 };
 $("btnKeys").onclick = () => start(false);
+$("btnMusic").onclick = () => setMusic(!musicOn);
+setMusic(musicOn, true); // chỉ cập nhật nút; nhạc chỉ phát sau cú bấm đầu tiên
 $("btnAgain").onclick = () => start(useVoice);
 $("btnMenu").onclick = () => { stopRec(); state = "menu"; $("endOv").hidden = true; $("startOv").hidden = false; poles = []; heardText.textContent = "Chưa bật mic"; };
 
