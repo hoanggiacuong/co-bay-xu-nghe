@@ -446,7 +446,7 @@ const MELODY = [
   ["G4", 1], ["A4", 1], ["E4", .5], ["D4", .5], ["E4", 1], ["D4", 3], [null, 1],
 ];
 const BASS = ["D3", "D3", "G3", "A3", "G3", "A3", "D3", "D3"]; // mỗi ô = 4 phách
-let musicOn = true; try { musicOn = localStorage.getItem("cobay_music") !== "0"; } catch (e) {}
+let musicOn = false; try { musicOn = localStorage.getItem("cobay_music") === "1"; } catch (e) {}
 const music = { bus: null, timer: null, next: 0, mi: 0, beat: 0, playing: false };
 
 function audio() { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); return ac; }
