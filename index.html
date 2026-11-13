@@ -297,12 +297,34 @@ function reset() {
   updateHud();
 }
 
+// Túi đề: xáo bài, bốc hết một lượt mới xáo lại. Từ và câu có túi riêng.
+// Lượt đang dở được nhớ trong máy, nên ván sau bốc tiếp chứ không quay lại đầu.
+const BAG_KEY = "cobay_bag_v1";
+let bags = { w: [], p: [] };
+try { const s = JSON.parse(localStorage.getItem(BAG_KEY)); if (s && Array.isArray(s.w) && Array.isArray(s.p)) bags = s; } catch (e) {}
+function shuffled(n) {
+  const a = [...Array(n).keys()];
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function draw(kind) {
+  const pool = kind === "p" ? PHRASES : WORDS;
+  let bag = bags[kind].filter(i => i < pool.length);
+  if (!bag.length) {
+    bag = shuffled(pool.length);
+    // tránh đề đầu lượt mới trùng đề vừa ra
+    if (lastPole && pool[bag[bag.length - 1]][1] === lastPole.item[1] && bag.length > 1) bag.unshift(bag.pop());
+  }
+  const idx = bag.pop(); bags[kind] = bag;
+  try { localStorage.setItem(BAG_KEY, JSON.stringify(bags)); } catch (e) {}
+  return pool[idx];
+}
+
 function pickItem() {
   // từ cột 5 bắt đầu có câu, càng về sau càng nhiều câu (tối đa 60%)
   const usePhrase = score >= 5 && Math.random() < Math.min(0.6, 0.25 + (score - 5) * 0.02);
   const pool = usePhrase ? PHRASES : WORDS;
-  let item;
-  do { item = pool[Math.floor(Math.random() * pool.length)]; } while (lastPole && item[1] === lastPole.item[1] && pool.length > 1);
+  const item = draw(usePhrase ? "p" : "w");
   let wrong;
   do { wrong = pool[Math.floor(Math.random() * pool.length)]; }
   while (wrong === item || wrong[3] === item[3] || strip(wrong[1]).includes(strip(item[1])) || strip(item[1]).includes(strip(wrong[1])));
